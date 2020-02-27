@@ -1,0 +1,21 @@
+Notes:
+
+Write crawl fuction to crawl urls in below formate and store in google cloud bucket.
+
+https://cloud.google.com/storage/docs/creating-buckets
+
+# Loads in input file. It should be in format of:
+    #     URL         neighbor URL
+
+Spark cluster nodes was implemented from the following google tutorial 
+
+https://cloud.google.com/dataproc/docs/tutorials/gcs-connector-spark-tutorial
+
+cluster-1 is the cluster node name
+
+finalspark.py is the file that ranks the urls based on there contribution towards the given url.
+
+command
+       gcloud dataproc jobs submit pyspark finalspark.py --cluster=cluster-1
+
+final output is saved on output_pagerankOut

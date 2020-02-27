@@ -1,0 +1,86 @@
+from bs4 import BeautifulSoup
+import requests
+import requests.exceptions
+from urllib.parse import urlsplit
+from urllib.parse import urlparse
+from collections import deque
+import re
+
+url = "https://studyinsweden.se/university/halmstad-university/"
+
+#tobecrawled urls queued here
+finalurls = deque([url])
+
+#all urls in page
+dictLinks = dict()
+#clean processed urls
+cleanurls = set()
+#target websites
+inhouseurls = set()
+#nontarget website
+filterurls = set()
+#nonclear websitelinks
+nogoodurls = set()
+links = []
+# continue till the que ends
+while len(finalurls):
+    
+    url = finalurls.popleft()
+    cleanurls.add(url)
+    
+    try:
+        response = requests.get(url)
+    except (requests.exceptions.MissingSchema, requests.exceptions.ConnectionError, requests.exceptions.InvalidURL,
+            requests.exceptions.InvalidSchema):
+        #seperate nongood urls
+        nogoodurls.add(url)
+        continue
+
+    #crawl base url 
+    parts = urlsplit(url)
+    base = "{0.netloc}".format(parts)
+    strip_base = base.replace("www.", "")
+    baseurl = "{0.scheme}://{0.netloc}".format(parts)
+    path = url[:url.rfind('/') + 1] if '/' in parts.path else url
+
+    # using beautifull soup to crawl data
+    soup = BeautifulSoup(response.text, "lxml")
+    list_AllLinks = []
+    myfile = open('/home/stud1/s/susnar17/lab_classification/myfile.txt', 'a')
+    for link in soup.find_all('a'):
+        # extract link url from the collect
+        collect = link.attrs["href"] if "href" in link.attrs else ''
+        if collect.startswith('/'):
+            inhouselink = baseurl + collect
+            inhouseurls.add(inhouselink)
+            final = " ".join([url, inhouselink])
+            myfile.write(final + "\n")
+
+        elif strip_base in collect:
+            inhouseurls.add(collect)
+            final = " ".join([url, collect])
+            myfile.write(final + "\n")
+
+        elif not collect.startswith('http'):
+            inhouselink = path + collect
+            inhouseurls.add(inhouselink)
+            final = " ".join([url, inhouselink])
+            myfile.write(final+"\n")
+
+        else:
+            filterurls.add(collect)
+
+        for i in inhouseurls:
+            if not i in finalurls and not i in cleanurls:
+                finalurls.append(i)
+    myfile.close()
+
+
+siteMap = cleanurls
+
+for keyLink in siteMap:
+    links.append(keyLink)
+    for valLink in siteMap[keyLink]:
+        links.append(valLink)
+
+links = list(set(links))
